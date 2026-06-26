@@ -80,7 +80,7 @@ function layout({ title, description, currentPath, content }) {
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://pete.bacus.org${currentPath}">
   <link rel="preload" href="/assets/fonts/iAWriterQuattroS-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/style.css?v=3">
   <script>
     (function() {
       try {

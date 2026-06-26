@@ -56,8 +56,7 @@
     box-sizing: border-box;
 }
 
-html { scroll-behavior: smooth; background-color: #ff69b4 !important; }
-body { background-color: #ff69b4 !important; }
+html { scroll-behavior: smooth; }
 
 body {
     font-family: var(--sans);
