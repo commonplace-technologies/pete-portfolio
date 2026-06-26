@@ -1,0 +1,54 @@
+{
+  "site": {
+    "title": "Pete Bacus",
+    "tagline": "Producer, mixer, and musician based in Boulder, CO. Crafting original music, curating mixes, and capturing live sound.",
+    "meta": {
+      "description": "Pete Bacus — producer, mixer, and musician. Mixes, original music, live recordings, and credits."
+    }
+  },
+  "navigation": {
+    "sections": [
+      {
+        "id": "mixes",
+        "title": "Mixes",
+        "tracks": [
+          { "id": "late-night-vol-1", "title": "Late Night Vol. 1" },
+          { "id": "summer-edit-2024", "title": "Summer Edit 2024" }
+        ]
+      },
+      {
+        "id": "original",
+        "title": "Original Music",
+        "tracks": [
+          { "id": "still-water", "title": "Still Water" },
+          { "id": "departure", "title": "Departure" }
+        ]
+      },
+      {
+        "id": "live",
+        "title": "Live Recordings",
+        "tracks": [
+          { "id": "fox-theatre-2023", "title": "Fox Theatre — November 2023" },
+          { "id": "backyard-session", "title": "Backyard Session" }
+        ]
+      },
+      {
+        "id": "credits",
+        "title": "Credits",
+        "tracks": [
+          { "id": "wavelength-album", "title": "Wavelength (Album)" },
+          { "id": "open-road-single", "title": "Open Road (Single)" },
+          { "id": "drift-single", "title": "Drift (Single)" }
+        ]
+      }
+    ]
+  },
+  "about": {
+    "email": "pete@bacus.org",
+    "social": {
+      "spotify": "https://open.spotify.com",
+      "soundcloud": "https://soundcloud.com",
+      "instagram": "https://instagram.com"
+    }
+  }
+}

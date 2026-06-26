@@ -1,0 +1,26 @@
+{
+  "name": "pete-bacus-portfolio",
+  "version": "1.0.0",
+  "description": "Source for pete.bacus.org",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "serve": "python3 -m http.server --directory dist 8000",
+    "dev": "npm run build && npm run serve",
+    "cms:dev": "wrangler dev -c cms/wrangler.toml",
+    "cms:deploy": "wrangler deploy -c cms/wrangler.toml"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.2.0",
+    "marked": "^12.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.99.0"
+  }
+}
