@@ -40,7 +40,6 @@
     --gray-20: #d6d6d6;
     --text-color: var(--black);
     --text-light: var(--gray-50);
-    --bg-color: var(--white);
     --border-color: var(--gray-20);
     --transition: color 0.15s linear, opacity 0.15s linear;
     --max-width: 880px;
