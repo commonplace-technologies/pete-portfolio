@@ -32,7 +32,8 @@
 }
 
 :root {
-    --white: #fde8f0;
+    --white: #ffffff;
+    --bg-color: #fde8f0;
     --black: #000000;
     --gray-90: #1a1a1a;
     --gray-50: #777777;
@@ -64,7 +65,7 @@ body {
     font-size: 17px;
     line-height: 1.55;
     color: var(--black);
-    background-color: var(--white);
+    background-color: var(--bg-color);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -124,7 +125,7 @@ h1, h2, h3, h4 {
 /* ---------- Nav ---------- */
 
 .navbar {
-    background-color: var(--white);
+    background-color: var(--bg-color);
     padding: 1.5rem 0;
     position: sticky;
     top: 0;
@@ -195,7 +196,7 @@ h1, h2, h3, h4 {
 
 .hero {
     padding: 5rem 0 4rem;
-    background: var(--white);
+    background: var(--bg-color);
 }
 
 .hero-text {
@@ -504,7 +505,7 @@ h1, h2, h3, h4 {
 /* ---------- Footer ---------- */
 
 .footer {
-    background-color: var(--white);
+    background-color: var(--bg-color);
     color: var(--black);
     padding: 3rem 0 4rem;
     margin-top: 4rem;
@@ -617,7 +618,7 @@ h1, h2, h3, h4 {
         top: 100%;
         left: 0;
         right: 0;
-        background-color: var(--white);
+        background-color: var(--bg-color);
         flex-direction: column;
         padding: 1rem 1.5rem;
         display: none;
@@ -649,6 +650,7 @@ html.theme-dark {
     --gray-90: #d4d4d4;
     --gray-50: #8b8b8b;
     --gray-20: #2a2a2a;
+    --bg-color: #1a0d10;
 }
 
 html.theme-dark body { color-scheme: dark; }
