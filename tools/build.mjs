@@ -1,7 +1,7 @@
 // Build script for pete.bacus.org.
 //
 // Reads:
-//   site-content.json              — site meta, sections, track list
+//   site-content.json              — site.domain, site meta, sections, track list
 //   content/tracks/<slug>/body.md  — front-matter + markdown per track
 //   content/about/about.md         — about page
 //
@@ -23,6 +23,11 @@ const CONTENT = path.join(ROOT, 'content');
 const DIST = path.join(ROOT, 'dist');
 
 const site = JSON.parse(await fs.readFile(path.join(ROOT, 'site-content.json'), 'utf8'));
+
+if (!site.site.domain) {
+  throw new Error('site-content.json: site.domain is required (e.g. "pete.bacus.org")');
+}
+const ORIGIN = `https://${site.site.domain}`;
 
 // ---------- helpers ----------
 
@@ -78,7 +83,7 @@ function layout({ title, description, currentPath, content }) {
   <meta property="og:title" content="${escapeHtml(fullTitle)}">
   <meta property="og:description" content="${escapeHtml(description || site.site.meta.description)}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://pete.bacus.org${currentPath}">
+  <meta property="og:url" content="${ORIGIN}${currentPath}">
   <link rel="preload" href="/assets/fonts/iAWriterQuattroS-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css?v=3">
   <script>
