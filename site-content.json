@@ -12,33 +12,27 @@
         "id": "mixes",
         "title": "Mixes",
         "tracks": [
-          { "id": "late-night-vol-1", "title": "Late Night Vol. 1" },
-          { "id": "summer-edit-2024", "title": "Summer Edit 2024" }
+          { "id": "burn-it-remix", "title": "Burn It (Remix)" }
         ]
       },
       {
         "id": "original",
         "title": "Original Music",
         "tracks": [
-          { "id": "still-water", "title": "Still Water" },
-          { "id": "departure", "title": "Departure" }
+          { "id": "horses", "title": "Horses" },
+          { "id": "tank-girl", "title": "Tank Girl" }
         ]
       },
       {
         "id": "live",
         "title": "Live Recordings",
-        "tracks": [
-          { "id": "fox-theatre-2023", "title": "Fox Theatre — November 2023" },
-          { "id": "backyard-session", "title": "Backyard Session" }
-        ]
+        "tracks": []
       },
       {
         "id": "credits",
         "title": "Credits",
         "tracks": [
-          { "id": "wavelength-album", "title": "Wavelength (Album)" },
-          { "id": "come-down", "title": "Come Down" },
-          { "id": "drift-single", "title": "Drift (Single)" }
+          { "id": "come-down", "title": "Come Down" }
         ]
       }
     ]
