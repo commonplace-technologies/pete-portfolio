@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    # Org Linux pool. GitHub-hosted runners are disabled org-wide, so a job
+    # pinned to ubuntu-latest queues forever with no runner and no error.
+    runs-on: [self-hosted, lebowski]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
