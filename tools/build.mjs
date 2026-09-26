@@ -10,7 +10,6 @@
 //   dist/tracks/<slug>/index.html  — one page per track (clean URL)
 //   dist/about/index.html          — about page
 //   dist/assets/                   — copied verbatim
-//   dist/.nojekyll, dist/CNAME
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -356,12 +355,6 @@ async function build() {
 
   // Static copies
   await copyDir(path.join(ROOT, 'assets'), 'assets');
-  await fs.writeFile(path.join(DIST, '.nojekyll'), '');
-  try {
-    await fs.copyFile(path.join(ROOT, 'CNAME'), path.join(DIST, 'CNAME'));
-  } catch (e) {
-    if (e.code !== 'ENOENT') throw e;
-  }
 
   console.log(`Done. ${tracks.length} track pages, about page, homepage.`);
 }

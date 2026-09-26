@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -20,31 +18,32 @@ jobs:
     # pinned to ubuntu-latest queues forever with no runner and no error.
     runs-on: [self-hosted, lebowski]
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: production
+      url: https://pete.bacus.org
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PAGES_PROJECT: pete-portfolio
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # Dev deps included: wrangler is one.
       - name: Install dependencies
-        run: npm install --omit=dev
+        run: npm install
 
       - name: Build
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      # Idempotent: creates the Pages project on the first run, no-op after.
+      # A bad token still fails loudly at the deploy step below.
+      - name: Ensure Pages project exists
+        run: npx wrangler pages project create "$PAGES_PROJECT" --production-branch=main || true
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to Cloudflare Pages
+        run: npx wrangler pages deploy dist --project-name="$PAGES_PROJECT" --branch=main --commit-dirty=true
