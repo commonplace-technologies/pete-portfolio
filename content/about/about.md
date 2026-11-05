@@ -2,12 +2,12 @@
 title: "About"
 ---
 
-Pete Bacus is a producer, mixer, and musician based in Boulder, Colorado.
+Pete is a producer, multi-instrumentalist, and amateur sound designer located in Boston, MA, where he is currently a student at Berklee College of Music.
 
-He works across original music, live sound, and post-production — equally comfortable behind a mixing board at a venue, in a studio session, or building tracks alone at night.
+He has experience in live and session performance on bass and guitar, and extensive home studio recording experience. He and Louis Davison co-produce a variety of styles for artists in the Boston area.
 
-His work spans genres but shares a consistent focus: space, clarity, and letting the music breathe. He has mixed live sets at venues across Colorado, produced original material released on major streaming platforms, and collaborated with artists on recordings ranging from intimate acoustic sessions to full-band productions.
+On his own time, he is exploring the vast realm of sound design and has worked on Foley and music for an indie short film.
 
-When he's not working on music, he's probably listening to it.
+Pete is a member of the band Vanguard, plays bass for YESH, and is actively gigging in the Boston area.
 
-Get in touch at [pete@bacus.org](mailto:pete@bacus.org).
+Get in touch at [pete@bacus.org](mailto:pete@bacus.org) — ヽ(•‿•)ノ
