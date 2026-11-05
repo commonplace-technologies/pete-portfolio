@@ -158,6 +158,7 @@
     }
 
     const tmpColor = new THREE.Color();
+    let pageRevealed = false;
 
     function animate(now) {
         scrollT += (scrollTargetT - scrollT) * 0.07;
@@ -213,6 +214,15 @@
         colAttr.needsUpdate = true;
 
         renderer.render(scene, camera);
+
+        // Reveal the page after the first real frame so there's no jump
+        if (!pageRevealed) {
+            pageRevealed = true;
+            const html = document.documentElement;
+            html.style.transition = 'opacity 0.7s ease';
+            html.style.opacity = '1';
+        }
+
         requestAnimationFrame(animate);
     }
 
