@@ -683,46 +683,81 @@ h1, h2, h3, h4 {
 }
 
 /* ---------- Glass readability ---------- */
+/* Background + blur live on ::before so the edge mask never clips text */
+
+.hero-text,
+.section-title,
+.project-grid,
+.about-layout,
+.project > .container {
+    position: relative;
+    isolation: isolate;   /* contain ::before's z-index: -1 */
+    background: transparent;
+}
+
+/* Shared faded-edge background layer */
+.hero-text::before,
+.section-title::before,
+.project-grid::before,
+.about-layout::before,
+.project > .container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    -webkit-mask-image:
+        linear-gradient(to right,  transparent 0%, black 12%, black 88%, transparent 100%),
+        linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-composite: destination-in;
+    mask-image:
+        linear-gradient(to right,  transparent 0%, black 12%, black 88%, transparent 100%),
+        linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    mask-composite: intersect;
+}
 
 .hero-text {
-    background: rgba(var(--glass-rgb), 0.78);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     border-radius: 10px;
     padding: 2rem 2.5rem;
     display: inline-block;
 }
+.hero-text::before,
+.about-layout::before,
+.project > .container::before {
+    background: rgba(var(--glass-rgb), 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
 
 .section-title {
     display: inline-block;
-    background: rgba(var(--glass-rgb), 0.72);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border-radius: 6px;
     padding: 0.2em 0.6em;
     margin-left: -0.6em;
 }
+.section-title::before {
+    background: rgba(var(--glass-rgb), 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
 
 .project-grid {
-    background: rgba(var(--glass-rgb), 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border-radius: 10px;
     padding: 0 1rem;
 }
+.project-grid::before {
+    background: rgba(var(--glass-rgb), 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
 
 .about-layout {
-    background: rgba(var(--glass-rgb), 0.78);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     border-radius: 10px;
     padding: 2.5rem;
 }
 
 .project > .container {
-    background: rgba(var(--glass-rgb), 0.78);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     border-radius: 10px;
     padding: 2rem 2.5rem;
 }
