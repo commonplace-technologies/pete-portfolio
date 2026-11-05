@@ -478,6 +478,29 @@ h1, h2, h3, h4 {
 
 .about { padding: 3rem 0 4rem; }
 
+.about-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+.about-portrait {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+@media (max-width: 720px) {
+    .about-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    .about-portrait {
+        max-width: 220px;
+    }
+}
+
 .about-content--single {
     max-width: 680px;
 }

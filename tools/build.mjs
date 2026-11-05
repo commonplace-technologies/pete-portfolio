@@ -291,10 +291,13 @@ function aboutPage(about) {
   return `
     <main class="about">
       <div class="container">
-        <article class="about-content about-content--single">
-          <h1>${escapeHtml(about.title || 'About')}</h1>
-          <div class="about-body">${body}</div>
-        </article>
+        <div class="about-layout">
+          <img class="about-portrait" src="/assets/images/portrait.jpg" alt="${escapeHtml(about.title || 'Pete Bacus')}">
+          <article class="about-content about-content--single">
+            <h1>${escapeHtml(about.title || 'About')}</h1>
+            <div class="about-body">${body}</div>
+          </article>
+        </div>
       </div>
     </main>`;
 }
