@@ -94,17 +94,21 @@
         return new THREE.CanvasTexture(c);
     }
 
-    const COLS = 55, ROWS = 45, SPACING = 60;
+    const COLS = 72, ROWS = 58, SPACING = 45;
     const COUNT = COLS * ROWS;
     const GRID_CX = 0;
-    const GRID_CZ = -((ROWS - 1) * SPACING / 2) - 100; // ≈ -1420
+    const GRID_CZ = -((ROWS - 1) * SPACING / 2) - 100;
 
     setCameraAngle(camTheta);
 
-    const baseX = new Float32Array(COUNT);
-    const baseZ = new Float32Array(COUNT);
+    const baseX  = new Float32Array(COUNT);
+    const baseZ  = new Float32Array(COUNT);
+    const fadeArr = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
     const colArr = new Float32Array(COUNT * 3);
+
+    const xHalf = (COLS - 1) * SPACING / 2;
+    const zHalf = (ROWS - 1) * SPACING / 2;
 
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
@@ -114,6 +118,12 @@
             posArr[i * 3]     = baseX[i];
             posArr[i * 3 + 1] = 0;
             posArr[i * 3 + 2] = baseZ[i];
+
+            // Edge fade: 1 at centre, 0 at perimeter
+            const nx = Math.abs(baseX[i]) / xHalf;
+            const nz = Math.abs(baseZ[i] - GRID_CZ) / zHalf;
+            const e  = Math.max(nx, nz);
+            fadeArr[i] = e < 0.6 ? 1.0 : Math.max(0, 1 - ((e - 0.6) / 0.4));
         }
     }
 
@@ -156,15 +166,16 @@
         updateMouseWorld();
 
         const isDark = document.documentElement.classList.contains('theme-dark');
-        const br = isDark ? 1 : 0;
-        const bg = isDark ? 1 : 0;
-        const bb = isDark ? 1 : 0;
+        // dot colour and the colour dots fade toward at the edges (bg colour)
+        const dotVal  = isDark ? 1 : 0;
+        const edgeVal = isDark ? 0 : 1;
 
         const RAINBOW_R = 160;
         const RIPPLE_R  = 180;
 
         for (let i = 0; i < COUNT; i++) {
             const x = baseX[i], z = baseZ[i];
+            const f = fadeArr[i]; // 1 = centre, 0 = edge
 
             const t = now + waveOffset;
             let y = Math.sin(x * 0.011 + z * 0.009 + t * 0.0005) * 38
@@ -188,13 +199,13 @@
             if (rainbowInfluence > 0) {
                 const hue = ((now * 0.00025 + Math.sqrt(x * x + z * z) * 0.0012) % 1 + 1) % 1;
                 tmpColor.setHSL(hue, 1.0, 0.5);
-                colArr[i * 3]     = br + (tmpColor.r - br) * rainbowInfluence;
-                colArr[i * 3 + 1] = bg + (tmpColor.g - bg) * rainbowInfluence;
-                colArr[i * 3 + 2] = bb + (tmpColor.b - bb) * rainbowInfluence;
+                colArr[i * 3]     = (dotVal + (tmpColor.r - dotVal) * rainbowInfluence) * f + edgeVal * (1 - f);
+                colArr[i * 3 + 1] = (dotVal + (tmpColor.g - dotVal) * rainbowInfluence) * f + edgeVal * (1 - f);
+                colArr[i * 3 + 2] = (dotVal + (tmpColor.b - dotVal) * rainbowInfluence) * f + edgeVal * (1 - f);
             } else {
-                colArr[i * 3]     = br;
-                colArr[i * 3 + 1] = bg;
-                colArr[i * 3 + 2] = bb;
+                colArr[i * 3]     = dotVal * f + edgeVal * (1 - f);
+                colArr[i * 3 + 1] = dotVal * f + edgeVal * (1 - f);
+                colArr[i * 3 + 2] = dotVal * f + edgeVal * (1 - f);
             }
         }
 
