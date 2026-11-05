@@ -1,74 +1,109 @@
-// Halftone dot grid background
+// 3D wave dot grid — Three.js WebGL
 (function () {
+    if (typeof THREE === 'undefined') return;
     const canvas = document.getElementById('particle-bg');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
 
-    let W, H, dots = [];
-    const SPACING    = 24;
-    const BASE_R     = 1.2;
-    const MAX_R      = 5.5;
-    const WAVE_SPEED = 5500;
-    const MOUSE_R    = 130;
-    const mouse = { x: -9999, y: -9999 };
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-    function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-        buildGrid();
-    }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 10000);
+    camera.position.set(0, 450, 1500);
+    camera.lookAt(0, -50, 0);
 
-    function buildGrid() {
-        dots = [];
-        const cols = Math.ceil(W / SPACING) + 1;
-        const rows = Math.ceil(H / SPACING) + 1;
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                dots.push({
-                    x: c * SPACING,
-                    y: r * SPACING,
-                    phase: (c * 0.45 + r * 0.3) + Math.random() * 0.3,
-                    period: WAVE_SPEED + Math.random() * 2000,
-                });
-            }
+    const COLS = 38, ROWS = 38, SPACING = 55;
+    const COUNT = COLS * ROWS;
+    const baseX = new Float32Array(COUNT);
+    const baseZ = new Float32Array(COUNT);
+    const posArr = new Float32Array(COUNT * 3);
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const i = r * COLS + c;
+            baseX[i] = (c - (COLS - 1) / 2) * SPACING;
+            baseZ[i] = (r - (ROWS - 1) / 2) * SPACING;
+            posArr[i * 3]     = baseX[i];
+            posArr[i * 3 + 1] = 0;
+            posArr[i * 3 + 2] = baseZ[i];
         }
     }
 
-    function dotColor() {
+    const geometry = new THREE.BufferGeometry();
+    const posAttr = new THREE.BufferAttribute(posArr, 3);
+    geometry.setAttribute('position', posAttr);
+
+    const material = new THREE.PointsMaterial({
+        color: 0x2a3a4a,
+        size: 11,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.6,
+    });
+
+    scene.add(new THREE.Points(geometry, material));
+
+    // Mouse world position via ray → y=0 plane intersection
+    const raycaster = new THREE.Raycaster();
+    const mouseNDC = new THREE.Vector2(-9999, -9999);
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const mouseWorld = new THREE.Vector3();
+    let mouseActive = false;
+
+    function updateMouseWorld() {
+        if (!mouseActive) return;
+        raycaster.setFromCamera(mouseNDC, camera);
+        raycaster.ray.intersectPlane(groundPlane, mouseWorld);
+    }
+
+    function getColor() {
         return document.documentElement.classList.contains('theme-dark')
-            ? '110,140,165'
-            : '42,58,74';
+            ? 0x6e8ca5 : 0x2a3a4a;
     }
 
     function animate(now) {
-        ctx.clearRect(0, 0, W, H);
-        const rgb = dotColor();
+        updateMouseWorld();
 
-        for (const d of dots) {
-            const wave = (Math.sin((now / d.period) * Math.PI * 2 + d.phase) + 1) / 2;
-            let r = BASE_R + wave * (MAX_R - BASE_R);
+        for (let i = 0; i < COUNT; i++) {
+            const x = baseX[i], z = baseZ[i];
+            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.00085) * 60
+                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00065) * 28;
 
-            const dx = d.x - mouse.x;
-            const dy = d.y - mouse.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < MOUSE_R) {
-                r += (1 - dist / MOUSE_R) * MAX_R * 1.4;
+            if (mouseActive) {
+                const dx = x - mouseWorld.x;
+                const dz = z - mouseWorld.z;
+                const d = Math.sqrt(dx * dx + dz * dz);
+                if (d < 300) {
+                    y += Math.cos(d * 0.022 - now * 0.004) * (1 - d / 300) * 85;
+                }
             }
 
-            ctx.beginPath();
-            ctx.arc(d.x, d.y, Math.max(0.4, r), 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${rgb},${0.12 + wave * 0.22})`;
-            ctx.fill();
+            posArr[i * 3 + 1] = y;
         }
+        posAttr.needsUpdate = true;
 
+        material.color.set(getColor());
+        renderer.render(scene, camera);
         requestAnimationFrame(animate);
     }
 
-    window.addEventListener('resize', resize);
-    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-    window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-    resize();
+    window.addEventListener('mousemove', e => {
+        mouseNDC.set(
+            (e.clientX / window.innerWidth) * 2 - 1,
+            -(e.clientY / window.innerHeight) * 2 + 1
+        );
+        mouseActive = true;
+    });
+
+    window.addEventListener('mouseleave', () => { mouseActive = false; });
+
     requestAnimationFrame(animate);
 })();
 

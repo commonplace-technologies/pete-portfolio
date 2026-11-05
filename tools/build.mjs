@@ -125,6 +125,7 @@ function layout({ title, description, currentPath, content }) {
       </div>
     </div>
   </footer>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
   <script src="/assets/js/main.js"></script>
 </body>
 </html>
