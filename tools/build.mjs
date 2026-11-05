@@ -113,7 +113,7 @@ function layout({ title, description, currentPath, content }) {
       </ul>
     </div>
   </nav>
-  ${content}
+  <div id="page-content">${content}</div>
   <footer class="footer">
     <div class="container">
       <p>&copy; ${new Date().getFullYear()} ${escapeHtml(site.site.title)}.</p>

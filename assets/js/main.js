@@ -11,8 +11,14 @@
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 12000);
 
-    // Current orbit angle (Y-axis rotation around world origin)
-    let camTheta = 0;
+    // Each page has a resting camera angle: home/tracks = 0, about = π/2
+    function pageAngle(path) {
+        const p = (path || '/').replace(/\/$/, '') || '/';
+        return p === '/about' ? Math.PI / 2 : 0;
+    }
+
+    // Start at the correct angle for the initial page (no animation needed on load)
+    let camTheta = pageAngle(window.location.pathname);
 
     // Scroll-driven camera: zoom in + lower angle as page scrolls down
     const CAM_TOP  = { x: 0, y: 700, z: 400 };
@@ -36,7 +42,6 @@
         const lx   = LOOK_TOP.x + (LOOK_BOT.x - LOOK_TOP.x) * t;
         const ly   = LOOK_TOP.y + (LOOK_BOT.y - LOOK_TOP.y) * t;
         const lz   = LOOK_TOP.z + (LOOK_BOT.z - LOOK_TOP.z) * t;
-        // Orbit around grid center, not world origin
         const cos = Math.cos(theta), sin = Math.sin(theta);
         const rCamX = camX - GRID_CX, rCamZ = camZ - GRID_CZ;
         const rLkX  = lx   - GRID_CX, rLkZ  = lz   - GRID_CZ;
@@ -57,7 +62,7 @@
     // Transition state
     let transStart = null, transFrom = 0, transTo = 0;
     const TRANS_MS = 650;
-    let pendingUrl = null;
+    let pendingCallback = null;
 
     function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
 
@@ -65,11 +70,14 @@
         if (transStart === null) return;
         const t = Math.min((now - transStart) / TRANS_MS, 1);
         camTheta = transFrom + (transTo - transFrom) * easeInOut(t);
-        setCameraAngle(camTheta);
         if (t >= 1) {
             transStart = null;
             camTheta = transTo;
-            if (pendingUrl) { window.location.href = pendingUrl; pendingUrl = null; }
+            if (pendingCallback) {
+                const cb = pendingCallback;
+                pendingCallback = null;
+                cb();
+            }
         }
     }
 
@@ -88,11 +96,11 @@
 
     const COLS = 55, ROWS = 45, SPACING = 60;
     const COUNT = COLS * ROWS;
-    // Z coordinate of grid center — used as orbit pivot
     const GRID_CX = 0;
     const GRID_CZ = -((ROWS - 1) * SPACING / 2) - 100; // ≈ -1420
 
-    setCameraAngle(0);
+    setCameraAngle(camTheta);
+
     const baseX = new Float32Array(COUNT);
     const baseZ = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
@@ -142,7 +150,7 @@
     const tmpColor = new THREE.Color();
 
     function animate(now) {
-        scrollT += (scrollTargetT - scrollT) * 0.07;  // smooth lerp
+        scrollT += (scrollTargetT - scrollT) * 0.07;
         tickTransition(now);
         setCameraAngle(camTheta);
         updateMouseWorld();
@@ -152,14 +160,13 @@
         const bg = isDark ? 1 : 0;
         const bb = isDark ? 1 : 0;
 
-        const RAINBOW_R = 160;  // smaller radius
+        const RAINBOW_R = 160;
         const RIPPLE_R  = 180;
 
         for (let i = 0; i < COUNT; i++) {
             const x = baseX[i], z = baseZ[i];
 
             const t = now + waveOffset;
-            // Slower wave, smaller peaks
             let y = Math.sin(x * 0.011 + z * 0.009 + t * 0.0005) * 38
                   + Math.sin(-x * 0.016 + z * 0.013 + t * 0.00038) * 18;
 
@@ -214,18 +221,59 @@
 
     window.addEventListener('mouseleave', () => { mouseActive = false; });
 
-    // Continuous wave time across page loads — so the grid doesn't reset
+    // Continuous wave time — sessionStorage offset keeps wave phase across loads
     let waveOffset = 0;
     const waveRef = sessionStorage.getItem('wave-ref');
     if (waveRef) waveOffset = Date.now() - parseInt(waveRef);
+    // Keep waveRef alive so the next load can sync
+    sessionStorage.setItem('wave-ref', (Date.now() - waveOffset).toString());
 
-    // Expose transition trigger for nav links (wired up in DOMContentLoaded)
-    window._triggerCamTransition = function (url, direction) {
-        sessionStorage.setItem('wave-ref', Date.now().toString());
+    // SPA navigation — camera rotates to new page angle, then content swaps
+    // No full reload, background runs continuously the entire time
+    window._navigateSPA = function (url, options) {
+        const replaceHistory = (options && options.replaceHistory) || false;
+        const destPath = new URL(url, location.origin).pathname;
+        const targetAngle = pageAngle(destPath);
+
+        // Start rotation toward the destination page's resting angle
         transFrom = camTheta;
-        transTo = camTheta + direction * Math.PI / 2;
+        transTo = targetAngle;
         transStart = performance.now();
-        pendingUrl = url;
+
+        // Fetch the new page content in parallel with the animation
+        const fetchPromise = fetch(url, { headers: { Accept: 'text/html' } }).then(r => {
+            if (!r.ok) throw new Error('fetch failed');
+            return r.text();
+        });
+
+        // When the rotation completes, swap the content
+        pendingCallback = async function () {
+            try {
+                const html = await fetchPromise;
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const newContent = doc.getElementById('page-content');
+                if (!newContent) throw new Error('no #page-content');
+
+                document.getElementById('page-content').replaceWith(newContent);
+                document.title = doc.title;
+
+                if (replaceHistory) {
+                    history.replaceState({}, doc.title, url);
+                } else {
+                    history.pushState({}, doc.title, url);
+                }
+
+                // Reset scroll position for the new page
+                scrollTargetT = 0;
+                scrollT = 0;
+                window.scrollTo(0, 0);
+
+                if (typeof window._initPageHandlers === 'function') window._initPageHandlers();
+            } catch (e) {
+                // Fallback to full navigation if SPA swap fails
+                window.location.href = url;
+            }
+        };
     };
 
     requestAnimationFrame(animate);
@@ -250,7 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 spans[2].style.transform = 'none';
             }
         });
-
         navMenu.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function () {
                 navMenu.classList.remove('active');
@@ -261,18 +308,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const href = this.getAttribute('href');
-            if (href !== '#') {
-                e.preventDefault();
-                const target = document.querySelector(href);
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    });
 
     // Theme toggle
     const root = document.documentElement;
@@ -304,46 +339,71 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Camera rotation on nav transitions (Music ↔ About)
-    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+    // SPA nav links — intercept clicks on internal links in the nav
     document.querySelectorAll('.nav-menu a[href]').forEach(link => {
         const href = link.getAttribute('href');
         if (!href || href.startsWith('mailto') || href.startsWith('#')) return;
-        const dest = href.replace(/\/$/, '') || '/';
-        if (dest === currentPath) return;  // already here
-
         link.addEventListener('click', e => {
-            if (!window._triggerCamTransition) return;
+            const dest = new URL(href, location.origin).pathname.replace(/\/$/, '') || '/';
+            const current = window.location.pathname.replace(/\/$/, '') || '/';
+            if (dest === current) return;
             e.preventDefault();
-            const dir = dest.length > currentPath.length ? 1 : -1;
-            window._triggerCamTransition(href, dir);
+            if (window._navigateSPA) window._navigateSPA(href);
         });
     });
 
-    // YouTube hover-to-play video grid
-    document.querySelectorAll('.video-item').forEach(item => {
-        const videoId = item.dataset.videoId;
-        if (!videoId) return;
-
-        let iframe = null;
-
-        item.addEventListener('mouseenter', () => {
-            if (iframe) return;
-            iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0`;
-            iframe.allow = 'autoplay; encrypted-media';
-            iframe.title = item.querySelector('.video-title')?.textContent || '';
-            item.appendChild(iframe);
-            item.classList.add('is-playing');
-        });
-
-        item.addEventListener('mouseleave', () => {
-            if (iframe) { iframe.remove(); iframe = null; }
-            item.classList.remove('is-playing');
-        });
-
-        item.addEventListener('click', () => {
-            window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener');
-        });
+    // Browser back/forward — refetch the content for the restored URL
+    window.addEventListener('popstate', function () {
+        if (window._navigateSPA) {
+            window._navigateSPA(window.location.href, { replaceHistory: true });
+        } else {
+            window.location.reload();
+        }
     });
+
+    // Page-specific handlers — run on initial load and after every SPA swap
+    function initPageHandlers() {
+        // Smooth scroll for anchor links within the current page content
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // YouTube hover-to-play video grid
+        document.querySelectorAll('.video-item').forEach(item => {
+            const videoId = item.dataset.videoId;
+            if (!videoId) return;
+
+            let iframe = null;
+
+            item.addEventListener('mouseenter', () => {
+                if (iframe) return;
+                iframe = document.createElement('iframe');
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0`;
+                iframe.allow = 'autoplay; encrypted-media';
+                iframe.title = item.querySelector('.video-title')?.textContent || '';
+                item.appendChild(iframe);
+                item.classList.add('is-playing');
+            });
+
+            item.addEventListener('mouseleave', () => {
+                if (iframe) { iframe.remove(); iframe = null; }
+                item.classList.remove('is-playing');
+            });
+
+            item.addEventListener('click', () => {
+                window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener');
+            });
+        });
+    }
+
+    // Expose for SPA content swaps
+    window._initPageHandlers = initPageHandlers;
+    initPageHandlers();
 });
