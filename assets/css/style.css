@@ -35,6 +35,7 @@
     --white: #ffffff;
     --bg-color: var(--white);
     --black: #000000;
+    --glass-rgb: 255,255,255;
     --gray-90: #1a1a1a;
     --gray-50: #777777;
     --gray-20: #d6d6d6;
@@ -139,7 +140,7 @@ h1, h2, h3, h4 {
 /* ---------- Nav ---------- */
 
 .navbar {
-    background-color: rgba(42, 58, 74, 0.92);
+    background-color: transparent;
     padding: 1.5rem 0;
     position: sticky;
     top: 0;
@@ -161,7 +162,8 @@ h1, h2, h3, h4 {
     font-family: var(--sans);
     font-weight: 700;
     font-size: 1rem;
-    color: #fff;
+    color: var(--black);
+    text-shadow: 0 1px 4px rgba(128,128,128,0.4);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -177,7 +179,8 @@ h1, h2, h3, h4 {
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: rgba(255,255,255,0.85);
+    color: var(--black);
+    text-shadow: 0 1px 4px rgba(128,128,128,0.4);
 }
 
 .nav-menu a::after {
@@ -210,7 +213,7 @@ h1, h2, h3, h4 {
 
 .hero {
     padding: 5rem 0 4rem;
-    background: var(--bg-color);
+    background: transparent;
 }
 
 .hero-text {
@@ -542,8 +545,8 @@ h1, h2, h3, h4 {
 /* ---------- Footer ---------- */
 
 .footer {
-    background-color: rgba(42, 58, 74, 0.92);
-    color: rgba(255,255,255,0.7);
+    background-color: transparent;
+    color: var(--black);
     padding: 3rem 0 4rem;
     margin-top: 4rem;
     font-family: var(--sans);
@@ -575,7 +578,7 @@ h1, h2, h3, h4 {
 }
 
 .footer-links a {
-    color: rgba(255,255,255,0.85);
+    color: var(--black);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 500;
@@ -679,11 +682,57 @@ h1, h2, h3, h4 {
     .theme-switch { font-size: 0.65rem; }
 }
 
+/* ---------- Glass readability ---------- */
+
+.hero-text {
+    background: rgba(var(--glass-rgb), 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 10px;
+    padding: 2rem 2.5rem;
+    display: inline-block;
+}
+
+.section-title {
+    display: inline-block;
+    background: rgba(var(--glass-rgb), 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 6px;
+    padding: 0.2em 0.6em;
+    margin-left: -0.6em;
+}
+
+.project-grid {
+    background: rgba(var(--glass-rgb), 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 10px;
+    padding: 0 1rem;
+}
+
+.about-layout {
+    background: rgba(var(--glass-rgb), 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 10px;
+    padding: 2.5rem;
+}
+
+.project > .container {
+    background: rgba(var(--glass-rgb), 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 10px;
+    padding: 2rem 2.5rem;
+}
+
 /* ---------- Dark theme ---------- */
 
 html.theme-dark {
     --white: #0d0d0d;
     --black: #f0f0f0;
+    --glass-rgb: 10,10,10;
     --gray-90: #d4d4d4;
     --gray-50: #8b8b8b;
     --gray-20: #2a2a2a;

@@ -10,17 +10,68 @@
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 12000);
-    // Steep downward angle so the grid fills top-to-bottom and spills off the sides
-    camera.position.set(0, 700, 400);
-    camera.lookAt(0, 0, -600);
 
-    // Grid extends away in -Z, so near rows are at z≈-100, far rows at z≈-2740
+    // Camera base position (angle 0)
+    const CAM = { x: 0, y: 700, z: 400 };
+    const LOOK = { x: 0, y: 0, z: -600 };
+
+    // Current orbit angle (Y-axis rotation around world origin)
+    let camTheta = 0;
+
+    function setCameraAngle(theta) {
+        const cos = Math.cos(theta), sin = Math.sin(theta);
+        camera.position.set(
+            CAM.x * cos - CAM.z * sin,
+            CAM.y,
+            CAM.x * sin + CAM.z * cos
+        );
+        camera.lookAt(
+            LOOK.x * cos - LOOK.z * sin,
+            LOOK.y,
+            LOOK.x * sin + LOOK.z * cos
+        );
+    }
+
+    setCameraAngle(0);
+
+    // Transition state
+    let transStart = null, transFrom = 0, transTo = 0;
+    const TRANS_MS = 650;
+    let pendingUrl = null;
+
+    function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    function tickTransition(now) {
+        if (transStart === null) return;
+        const t = Math.min((now - transStart) / TRANS_MS, 1);
+        camTheta = transFrom + (transTo - transFrom) * easeInOut(t);
+        setCameraAngle(camTheta);
+        if (t >= 1) {
+            transStart = null;
+            camTheta = transTo;
+            if (pendingUrl) { window.location.href = pendingUrl; pendingUrl = null; }
+        }
+    }
+
+    // Round dot sprite texture
+    function circleTexture() {
+        const sz = 64;
+        const c = document.createElement('canvas');
+        c.width = c.height = sz;
+        const cx = c.getContext('2d');
+        cx.beginPath();
+        cx.arc(sz / 2, sz / 2, sz / 2 - 2, 0, Math.PI * 2);
+        cx.fillStyle = '#fff';
+        cx.fill();
+        return new THREE.CanvasTexture(c);
+    }
+
     const COLS = 55, ROWS = 45, SPACING = 60;
     const COUNT = COLS * ROWS;
     const baseX = new Float32Array(COUNT);
     const baseZ = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
-    const colArr = new Float32Array(COUNT * 3); // per-vertex RGB
+    const colArr = new Float32Array(COUNT * 3);
 
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
@@ -30,7 +81,6 @@
             posArr[i * 3]     = baseX[i];
             posArr[i * 3 + 1] = 0;
             posArr[i * 3 + 2] = baseZ[i];
-            colArr[i * 3] = colArr[i * 3 + 1] = colArr[i * 3 + 2] = 0;
         }
     }
 
@@ -41,7 +91,9 @@
     geometry.setAttribute('color', colAttr);
 
     const material = new THREE.PointsMaterial({
-        size: 11,
+        map: circleTexture(),
+        alphaTest: 0.4,
+        size: 10,
         sizeAttenuation: true,
         transparent: true,
         opacity: 0.65,
@@ -50,7 +102,6 @@
 
     scene.add(new THREE.Points(geometry, material));
 
-    // Mouse world position via ray → y=0 plane intersection
     const raycaster = new THREE.Raycaster();
     const mouseNDC = new THREE.Vector2(-9999, -9999);
     const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -66,30 +117,31 @@
     const tmpColor = new THREE.Color();
 
     function animate(now) {
+        tickTransition(now);
         updateMouseWorld();
 
         const isDark = document.documentElement.classList.contains('theme-dark');
-        const br = isDark ? 1 : 0;  // base color R
+        const br = isDark ? 1 : 0;
         const bg = isDark ? 1 : 0;
         const bb = isDark ? 1 : 0;
 
-        const RAINBOW_R = 300;
+        const RAINBOW_R = 160;  // smaller radius
+        const RIPPLE_R  = 180;
 
         for (let i = 0; i < COUNT; i++) {
             const x = baseX[i], z = baseZ[i];
 
-            // Wave — slower oscillation, slightly larger amplitude
-            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.0005) * 70
-                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00038) * 32;
+            // Slower wave, smaller peaks
+            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.0005) * 38
+                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00038) * 18;
 
-            // Mouse ripple
             let rainbowInfluence = 0;
             if (mouseActive) {
                 const dx = x - mouseWorld.x;
                 const dz = z - mouseWorld.z;
                 const d = Math.sqrt(dx * dx + dz * dz);
-                if (d < 350) {
-                    y += Math.cos(d * 0.022 - now * 0.005) * (1 - d / 350) * 90;
+                if (d < RIPPLE_R) {
+                    y += Math.cos(d * 0.03 - now * 0.005) * (1 - d / RIPPLE_R) * 55;
                 }
                 if (d < RAINBOW_R) {
                     rainbowInfluence = 1 - d / RAINBOW_R;
@@ -98,9 +150,8 @@
 
             posArr[i * 3 + 1] = y;
 
-            // Color: rainbow near mouse, base color elsewhere
             if (rainbowInfluence > 0) {
-                const hue = ((now * 0.00025 + Math.sqrt((x * x + z * z)) * 0.0012) % 1 + 1) % 1;
+                const hue = ((now * 0.00025 + Math.sqrt(x * x + z * z) * 0.0012) % 1 + 1) % 1;
                 tmpColor.setHSL(hue, 1.0, 0.5);
                 colArr[i * 3]     = br + (tmpColor.r - br) * rainbowInfluence;
                 colArr[i * 3 + 1] = bg + (tmpColor.g - bg) * rainbowInfluence;
@@ -134,6 +185,26 @@
     });
 
     window.addEventListener('mouseleave', () => { mouseActive = false; });
+
+    // Expose transition trigger for nav links (wired up in DOMContentLoaded)
+    window._triggerCamTransition = function (url, direction) {
+        transFrom = camTheta;
+        transTo = camTheta + direction * Math.PI / 2;
+        transStart = performance.now();
+        pendingUrl = url;
+    };
+
+    // On page load: check for incoming transition
+    const incoming = sessionStorage.getItem('cam-incoming');
+    if (incoming !== null) {
+        sessionStorage.removeItem('cam-incoming');
+        const startAngle = parseFloat(incoming);
+        camTheta = startAngle;
+        setCameraAngle(startAngle);
+        transFrom = startAngle;
+        transTo = 0;
+        transStart = performance.now();
+    }
 
     requestAnimationFrame(animate);
 })();
@@ -181,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Theme toggle — initial class set by inline <head> script to avoid flash.
+    // Theme toggle
     const root = document.documentElement;
 
     function currentTheme() {
@@ -211,7 +282,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // YouTube hover-to-play video grid.
+    // Camera rotation on nav transitions (Music ↔ About)
+    const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+    document.querySelectorAll('.nav-menu a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('mailto') || href.startsWith('#')) return;
+        const dest = href.replace(/\/$/, '') || '/';
+        if (dest === currentPath) return;  // already here
+
+        link.addEventListener('click', e => {
+            if (!window._triggerCamTransition) return;
+            e.preventDefault();
+            // Direction: going deeper (+1) or back (-1) based on path depth
+            const dir = dest.length > currentPath.length ? 1 : -1;
+            sessionStorage.setItem('cam-incoming', String(-dir * Math.PI / 2));
+            window._triggerCamTransition(href, dir);
+        });
+    });
+
+    // YouTube hover-to-play video grid
     document.querySelectorAll('.video-item').forEach(item => {
         const videoId = item.dataset.videoId;
         if (!videoId) return;
@@ -229,10 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         item.addEventListener('mouseleave', () => {
-            if (iframe) {
-                iframe.remove();
-                iframe = null;
-            }
+            if (iframe) { iframe.remove(); iframe = null; }
             item.classList.remove('is-playing');
         });
 
