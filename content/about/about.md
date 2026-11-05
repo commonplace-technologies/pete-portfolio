@@ -8,6 +8,6 @@ He has experience in live and session performance on bass and guitar, and extens
 
 On his own time, he explores the vast realm of sound design and has worked on Foley and music for indie short films.
 
-Pete is a member of the band Vanguard, plays bass for YESH, and is actively gigging in the Boston area.
+Pete is a member of the local band Vanguard, plays bass for YESH, an up-and-coming artist from London, and is actively gigging in the Boston area.
 
 Get in touch at [pete@bacus.org](mailto:pete@bacus.org) — ヽ(•‿•)ノ
