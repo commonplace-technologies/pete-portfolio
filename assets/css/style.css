@@ -740,3 +740,12 @@ html.theme-dark {
 }
 
 html.theme-dark body { color-scheme: dark; }
+
+@keyframes page-enter {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+#page-content {
+    animation: page-enter 0.4s ease-out both;
+}
