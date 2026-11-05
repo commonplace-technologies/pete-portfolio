@@ -1,3 +1,95 @@
+// Particle field background
+(function () {
+    const canvas = document.getElementById('particle-bg');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let W, H;
+    const mouse = { x: -9999, y: -9999 };
+    const COUNT = 55;
+    const REPEL_RADIUS = 110;
+    const REPEL_STRENGTH = 55;
+    const particles = [];
+
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    function makeParticle() {
+        return {
+            bx: Math.random() * W,
+            by: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.25,
+            vy: (Math.random() - 0.5) * 0.25,
+            phase:  Math.random() * Math.PI * 2,
+            phaseY: Math.random() * Math.PI * 2,
+            ampX:   10 + Math.random() * 20,
+            ampY:   15 + Math.random() * 25,
+            period: 4000 + Math.random() * 4000,
+            r:      1 + Math.random(),
+            opacity: 0.2 + Math.random() * 0.2,
+        };
+    }
+
+    function init() {
+        particles.length = 0;
+        for (let i = 0; i < COUNT; i++) particles.push(makeParticle());
+    }
+
+    function dotColor() {
+        return document.documentElement.classList.contains('theme-dark')
+            ? '240,240,240'
+            : '0,0,0';
+    }
+
+    function animate(now) {
+        ctx.clearRect(0, 0, W, H);
+        const rgb = dotColor();
+
+        for (const p of particles) {
+            // Slow drift — wrap at edges
+            p.bx += p.vx;
+            p.by += p.vy;
+            if (p.bx < -20) p.bx = W + 20;
+            if (p.bx > W + 20) p.bx = -20;
+            if (p.by < -20) p.by = H + 20;
+            if (p.by > H + 20) p.by = -20;
+
+            // Wave oscillation
+            const t = now / p.period;
+            let x = p.bx + Math.sin(t * Math.PI * 2 + p.phase)  * p.ampX;
+            let y = p.by + Math.sin(t * Math.PI * 2 + p.phaseY) * p.ampY;
+
+            // Mouse repulsion
+            const dx = x - mouse.x;
+            const dy = y - mouse.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < REPEL_RADIUS * REPEL_RADIUS && d2 > 0) {
+                const d = Math.sqrt(d2);
+                const f = (REPEL_RADIUS - d) / REPEL_RADIUS;
+                x += (dx / d) * f * REPEL_STRENGTH;
+                y += (dy / d) * f * REPEL_STRENGTH;
+            }
+
+            ctx.beginPath();
+            ctx.arc(x, y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${rgb},${p.opacity})`;
+            ctx.fill();
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => { resize(); init(); });
+    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+    resize();
+    init();
+    requestAnimationFrame(animate);
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     // Mobile nav toggle
     const navToggle = document.querySelector('.nav-toggle');

@@ -92,6 +92,7 @@ function layout({ title, description, currentPath, content }) {
   </script>
 </head>
 <body>
+  <canvas id="particle-bg"></canvas>
   <div class="utility-bar">
     <div class="theme-switch" role="group" aria-label="Theme">
       <button data-theme="light" type="button" aria-label="Light theme">Light</button>
