@@ -228,18 +228,6 @@
         pendingUrl = url;
     };
 
-    // On page load: check for incoming transition
-    const incoming = sessionStorage.getItem('cam-incoming');
-    if (incoming !== null) {
-        sessionStorage.removeItem('cam-incoming');
-        const startAngle = parseFloat(incoming);
-        camTheta = startAngle;
-        setCameraAngle(startAngle);
-        transFrom = startAngle;
-        transTo = 0;
-        transStart = performance.now();
-    }
-
     requestAnimationFrame(animate);
 })();
 
@@ -327,9 +315,7 @@ document.addEventListener('DOMContentLoaded', function () {
         link.addEventListener('click', e => {
             if (!window._triggerCamTransition) return;
             e.preventDefault();
-            // Direction: going deeper (+1) or back (-1) based on path depth
             const dir = dest.length > currentPath.length ? 1 : -1;
-            sessionStorage.setItem('cam-incoming', String(-dir * Math.PI / 2));
             window._triggerCamTransition(href, dir);
         });
     });
