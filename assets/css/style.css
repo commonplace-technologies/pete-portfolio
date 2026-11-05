@@ -33,7 +33,7 @@
 
 :root {
     --white: #ffffff;
-    --bg-color: var(--white);
+    --bg-color: #ffffff;
     --black: #000000;
     --glass-rgb: 255,255,255;
     --gray-90: #1a1a1a;

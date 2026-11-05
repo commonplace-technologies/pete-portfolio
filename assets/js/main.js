@@ -38,9 +38,20 @@
         const lx   = LOOK_TOP.x + (LOOK_BOT.x - LOOK_TOP.x) * t;
         const ly   = LOOK_TOP.y + (LOOK_BOT.y - LOOK_TOP.y) * t;
         const lz   = LOOK_TOP.z + (LOOK_BOT.z - LOOK_TOP.z) * t;
+        // Orbit around grid center, not world origin
         const cos = Math.cos(theta), sin = Math.sin(theta);
-        camera.position.set(camX * cos - camZ * sin, camY, camX * sin + camZ * cos);
-        camera.lookAt(lx * cos - lz * sin, ly, lx * sin + lz * cos);
+        const rCamX = camX - GRID_CX, rCamZ = camZ - GRID_CZ;
+        const rLkX  = lx   - GRID_CX, rLkZ  = lz   - GRID_CZ;
+        camera.position.set(
+            rCamX * cos - rCamZ * sin + GRID_CX,
+            camY,
+            rCamX * sin + rCamZ * cos + GRID_CZ
+        );
+        camera.lookAt(
+            rLkX * cos - rLkZ * sin + GRID_CX,
+            ly,
+            rLkX * sin + rLkZ * cos + GRID_CZ
+        );
         camera.fov = FOV_TOP + (FOV_BOT - FOV_TOP) * t;
         camera.updateProjectionMatrix();
     }
@@ -79,6 +90,9 @@
 
     const COLS = 55, ROWS = 45, SPACING = 60;
     const COUNT = COLS * ROWS;
+    // Z coordinate of grid center — used as orbit pivot
+    const GRID_CX = 0;
+    const GRID_CZ = -((ROWS - 1) * SPACING / 2) - 100; // ≈ -1420
     const baseX = new Float32Array(COUNT);
     const baseZ = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
@@ -144,9 +158,10 @@
         for (let i = 0; i < COUNT; i++) {
             const x = baseX[i], z = baseZ[i];
 
+            const t = now + waveOffset;
             // Slower wave, smaller peaks
-            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.0005) * 38
-                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00038) * 18;
+            let y = Math.sin(x * 0.011 + z * 0.009 + t * 0.0005) * 38
+                  + Math.sin(-x * 0.016 + z * 0.013 + t * 0.00038) * 18;
 
             let rainbowInfluence = 0;
             if (mouseActive) {
@@ -199,8 +214,14 @@
 
     window.addEventListener('mouseleave', () => { mouseActive = false; });
 
+    // Continuous wave time across page loads — so the grid doesn't reset
+    let waveOffset = 0;
+    const waveRef = sessionStorage.getItem('wave-ref');
+    if (waveRef) waveOffset = Date.now() - parseInt(waveRef);
+
     // Expose transition trigger for nav links (wired up in DOMContentLoaded)
     window._triggerCamTransition = function (url, direction) {
+        sessionStorage.setItem('wave-ref', Date.now().toString());
         transFrom = camTheta;
         transTo = camTheta + direction * Math.PI / 2;
         transStart = performance.now();
