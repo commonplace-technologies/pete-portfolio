@@ -9,37 +9,43 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.set(0, 450, 1500);
-    camera.lookAt(0, -50, 0);
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 12000);
+    // Steep downward angle so the grid fills top-to-bottom and spills off the sides
+    camera.position.set(0, 700, 400);
+    camera.lookAt(0, 0, -600);
 
-    const COLS = 38, ROWS = 38, SPACING = 55;
+    // Grid extends away in -Z, so near rows are at z≈-100, far rows at z≈-2740
+    const COLS = 55, ROWS = 45, SPACING = 60;
     const COUNT = COLS * ROWS;
     const baseX = new Float32Array(COUNT);
     const baseZ = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
+    const colArr = new Float32Array(COUNT * 3); // per-vertex RGB
 
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             const i = r * COLS + c;
             baseX[i] = (c - (COLS - 1) / 2) * SPACING;
-            baseZ[i] = (r - (ROWS - 1) / 2) * SPACING;
+            baseZ[i] = -(r * SPACING) - 100;
             posArr[i * 3]     = baseX[i];
             posArr[i * 3 + 1] = 0;
             posArr[i * 3 + 2] = baseZ[i];
+            colArr[i * 3] = colArr[i * 3 + 1] = colArr[i * 3 + 2] = 0;
         }
     }
 
     const geometry = new THREE.BufferGeometry();
     const posAttr = new THREE.BufferAttribute(posArr, 3);
+    const colAttr = new THREE.BufferAttribute(colArr, 3);
     geometry.setAttribute('position', posAttr);
+    geometry.setAttribute('color', colAttr);
 
     const material = new THREE.PointsMaterial({
-        color: 0x2a3a4a,
         size: 11,
         sizeAttenuation: true,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.65,
+        vertexColors: true,
     });
 
     scene.add(new THREE.Points(geometry, material));
@@ -57,33 +63,58 @@
         raycaster.ray.intersectPlane(groundPlane, mouseWorld);
     }
 
-    function getColor() {
-        return document.documentElement.classList.contains('theme-dark')
-            ? 0x6e8ca5 : 0x2a3a4a;
-    }
+    const tmpColor = new THREE.Color();
 
     function animate(now) {
         updateMouseWorld();
 
+        const isDark = document.documentElement.classList.contains('theme-dark');
+        const br = isDark ? 1 : 0;  // base color R
+        const bg = isDark ? 1 : 0;
+        const bb = isDark ? 1 : 0;
+
+        const RAINBOW_R = 300;
+
         for (let i = 0; i < COUNT; i++) {
             const x = baseX[i], z = baseZ[i];
-            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.00085) * 60
-                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00065) * 28;
 
+            // Wave — slower oscillation, slightly larger amplitude
+            let y = Math.sin(x * 0.011 + z * 0.009 + now * 0.0005) * 70
+                  + Math.sin(-x * 0.016 + z * 0.013 + now * 0.00038) * 32;
+
+            // Mouse ripple
+            let rainbowInfluence = 0;
             if (mouseActive) {
                 const dx = x - mouseWorld.x;
                 const dz = z - mouseWorld.z;
                 const d = Math.sqrt(dx * dx + dz * dz);
-                if (d < 300) {
-                    y += Math.cos(d * 0.022 - now * 0.004) * (1 - d / 300) * 85;
+                if (d < 350) {
+                    y += Math.cos(d * 0.022 - now * 0.005) * (1 - d / 350) * 90;
+                }
+                if (d < RAINBOW_R) {
+                    rainbowInfluence = 1 - d / RAINBOW_R;
                 }
             }
 
             posArr[i * 3 + 1] = y;
-        }
-        posAttr.needsUpdate = true;
 
-        material.color.set(getColor());
+            // Color: rainbow near mouse, base color elsewhere
+            if (rainbowInfluence > 0) {
+                const hue = ((now * 0.00025 + Math.sqrt((x * x + z * z)) * 0.0012) % 1 + 1) % 1;
+                tmpColor.setHSL(hue, 1.0, 0.5);
+                colArr[i * 3]     = br + (tmpColor.r - br) * rainbowInfluence;
+                colArr[i * 3 + 1] = bg + (tmpColor.g - bg) * rainbowInfluence;
+                colArr[i * 3 + 2] = bb + (tmpColor.b - bb) * rainbowInfluence;
+            } else {
+                colArr[i * 3]     = br;
+                colArr[i * 3 + 1] = bg;
+                colArr[i * 3 + 2] = bb;
+            }
+        }
+
+        posAttr.needsUpdate = true;
+        colAttr.needsUpdate = true;
+
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
     }
@@ -181,9 +212,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // YouTube hover-to-play video grid.
-    // Mouseenter swaps the thumbnail for an autoplay iframe (muted — browsers
-    // block unmuted autoplay without a direct click gesture). Mouseleave
-    // restores the thumbnail by removing the iframe.
     document.querySelectorAll('.video-item').forEach(item => {
         const videoId = item.dataset.videoId;
         if (!videoId) return;
@@ -208,7 +236,6 @@ document.addEventListener('DOMContentLoaded', function () {
             item.classList.remove('is-playing');
         });
 
-        // Clicking the video item opens the full YouTube page
         item.addEventListener('click', () => {
             window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank', 'noopener');
         });
