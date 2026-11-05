@@ -1,92 +1,74 @@
-// Particle field background
+// Halftone dot grid background
 (function () {
     const canvas = document.getElementById('particle-bg');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let W, H;
+    let W, H, dots = [];
+    const SPACING    = 24;
+    const BASE_R     = 1.2;
+    const MAX_R      = 5.5;
+    const WAVE_SPEED = 5500;
+    const MOUSE_R    = 130;
     const mouse = { x: -9999, y: -9999 };
-    const COUNT = 55;
-    const REPEL_RADIUS = 110;
-    const REPEL_STRENGTH = 55;
-    const particles = [];
 
     function resize() {
-        W = canvas.width = window.innerWidth;
+        W = canvas.width  = window.innerWidth;
         H = canvas.height = window.innerHeight;
+        buildGrid();
     }
 
-    function makeParticle() {
-        return {
-            bx: Math.random() * W,
-            by: Math.random() * H,
-            vx: (Math.random() - 0.5) * 0.25,
-            vy: (Math.random() - 0.5) * 0.25,
-            phase:  Math.random() * Math.PI * 2,
-            phaseY: Math.random() * Math.PI * 2,
-            ampX:   10 + Math.random() * 20,
-            ampY:   15 + Math.random() * 25,
-            period: 4000 + Math.random() * 4000,
-            r:      1 + Math.random(),
-            opacity: 0.2 + Math.random() * 0.2,
-        };
-    }
-
-    function init() {
-        particles.length = 0;
-        for (let i = 0; i < COUNT; i++) particles.push(makeParticle());
+    function buildGrid() {
+        dots = [];
+        const cols = Math.ceil(W / SPACING) + 1;
+        const rows = Math.ceil(H / SPACING) + 1;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                dots.push({
+                    x: c * SPACING,
+                    y: r * SPACING,
+                    phase: (c * 0.45 + r * 0.3) + Math.random() * 0.3,
+                    period: WAVE_SPEED + Math.random() * 2000,
+                });
+            }
+        }
     }
 
     function dotColor() {
         return document.documentElement.classList.contains('theme-dark')
-            ? '240,240,240'
-            : '0,0,0';
+            ? '110,140,165'
+            : '42,58,74';
     }
 
     function animate(now) {
         ctx.clearRect(0, 0, W, H);
         const rgb = dotColor();
 
-        for (const p of particles) {
-            // Slow drift — wrap at edges
-            p.bx += p.vx;
-            p.by += p.vy;
-            if (p.bx < -20) p.bx = W + 20;
-            if (p.bx > W + 20) p.bx = -20;
-            if (p.by < -20) p.by = H + 20;
-            if (p.by > H + 20) p.by = -20;
+        for (const d of dots) {
+            const wave = (Math.sin((now / d.period) * Math.PI * 2 + d.phase) + 1) / 2;
+            let r = BASE_R + wave * (MAX_R - BASE_R);
 
-            // Wave oscillation
-            const t = now / p.period;
-            let x = p.bx + Math.sin(t * Math.PI * 2 + p.phase)  * p.ampX;
-            let y = p.by + Math.sin(t * Math.PI * 2 + p.phaseY) * p.ampY;
-
-            // Mouse repulsion
-            const dx = x - mouse.x;
-            const dy = y - mouse.y;
-            const d2 = dx * dx + dy * dy;
-            if (d2 < REPEL_RADIUS * REPEL_RADIUS && d2 > 0) {
-                const d = Math.sqrt(d2);
-                const f = (REPEL_RADIUS - d) / REPEL_RADIUS;
-                x += (dx / d) * f * REPEL_STRENGTH;
-                y += (dy / d) * f * REPEL_STRENGTH;
+            const dx = d.x - mouse.x;
+            const dy = d.y - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < MOUSE_R) {
+                r += (1 - dist / MOUSE_R) * MAX_R * 1.4;
             }
 
             ctx.beginPath();
-            ctx.arc(x, y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${rgb},${p.opacity})`;
+            ctx.arc(d.x, d.y, Math.max(0.4, r), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${rgb},${0.12 + wave * 0.22})`;
             ctx.fill();
         }
 
         requestAnimationFrame(animate);
     }
 
-    window.addEventListener('resize', () => { resize(); init(); });
+    window.addEventListener('resize', resize);
     window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
     window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
 
     resize();
-    init();
     requestAnimationFrame(animate);
 })();
 
