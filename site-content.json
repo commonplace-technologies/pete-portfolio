@@ -9,13 +9,6 @@
   "navigation": {
     "sections": [
       {
-        "id": "mixes",
-        "title": "Mixes",
-        "tracks": [
-          { "id": "burn-it-remix", "title": "Burn It (Remix)" }
-        ]
-      },
-      {
         "id": "original",
         "title": "Original Music",
         "tracks": [
@@ -28,6 +21,13 @@
         "title": "Credits",
         "tracks": [
           { "id": "come-down", "title": "Come Down" }
+        ]
+      },
+      {
+        "id": "mixes",
+        "title": "Mixes",
+        "tracks": [
+          { "id": "burn-it-remix", "title": "Burn It (Remix)" }
         ]
       }
     ]
