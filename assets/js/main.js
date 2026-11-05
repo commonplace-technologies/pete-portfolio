@@ -14,8 +14,6 @@
     // Current orbit angle (Y-axis rotation around world origin)
     let camTheta = 0;
 
-    setCameraAngle(0);
-
     // Scroll-driven camera: zoom in + lower angle as page scrolls down
     const CAM_TOP  = { x: 0, y: 700, z: 400 };
     const CAM_BOT  = { x: 0, y: 180, z: 950 };
@@ -93,6 +91,8 @@
     // Z coordinate of grid center — used as orbit pivot
     const GRID_CX = 0;
     const GRID_CZ = -((ROWS - 1) * SPACING / 2) - 100; // ≈ -1420
+
+    setCameraAngle(0);
     const baseX = new Float32Array(COUNT);
     const baseZ = new Float32Array(COUNT);
     const posArr = new Float32Array(COUNT * 3);
