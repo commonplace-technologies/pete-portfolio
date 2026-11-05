@@ -57,11 +57,7 @@
     box-sizing: border-box;
 }
 
-html {
-    scroll-behavior: smooth;
-    perspective: 1400px;
-    overflow-x: hidden;
-}
+html { scroll-behavior: smooth; }
 
 #particle-bg {
     position: fixed;
