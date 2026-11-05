@@ -11,28 +11,39 @@
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 12000);
 
-    // Camera base position (angle 0)
-    const CAM = { x: 0, y: 700, z: 400 };
-    const LOOK = { x: 0, y: 0, z: -600 };
-
     // Current orbit angle (Y-axis rotation around world origin)
     let camTheta = 0;
 
-    function setCameraAngle(theta) {
-        const cos = Math.cos(theta), sin = Math.sin(theta);
-        camera.position.set(
-            CAM.x * cos - CAM.z * sin,
-            CAM.y,
-            CAM.x * sin + CAM.z * cos
-        );
-        camera.lookAt(
-            LOOK.x * cos - LOOK.z * sin,
-            LOOK.y,
-            LOOK.x * sin + LOOK.z * cos
-        );
-    }
-
     setCameraAngle(0);
+
+    // Scroll-driven camera: zoom in + lower angle as page scrolls down
+    const CAM_TOP  = { x: 0, y: 700, z: 400 };
+    const CAM_BOT  = { x: 0, y: 180, z: 950 };
+    const LOOK_TOP = { x: 0, y: 0, z: -600 };
+    const LOOK_BOT = { x: 0, y: 0, z: -50  };
+    const FOV_TOP  = 55, FOV_BOT = 44;
+
+    let scrollT = 0, scrollTargetT = 0;
+
+    window.addEventListener('scroll', () => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        scrollTargetT = maxScroll > 0 ? Math.min(window.scrollY / maxScroll, 1) : 0;
+    }, { passive: true });
+
+    function setCameraAngle(theta) {
+        const t = scrollT;
+        const camX = CAM_TOP.x + (CAM_BOT.x - CAM_TOP.x) * t;
+        const camY = CAM_TOP.y + (CAM_BOT.y - CAM_TOP.y) * t;
+        const camZ = CAM_TOP.z + (CAM_BOT.z - CAM_TOP.z) * t;
+        const lx   = LOOK_TOP.x + (LOOK_BOT.x - LOOK_TOP.x) * t;
+        const ly   = LOOK_TOP.y + (LOOK_BOT.y - LOOK_TOP.y) * t;
+        const lz   = LOOK_TOP.z + (LOOK_BOT.z - LOOK_TOP.z) * t;
+        const cos = Math.cos(theta), sin = Math.sin(theta);
+        camera.position.set(camX * cos - camZ * sin, camY, camX * sin + camZ * cos);
+        camera.lookAt(lx * cos - lz * sin, ly, lx * sin + lz * cos);
+        camera.fov = FOV_TOP + (FOV_BOT - FOV_TOP) * t;
+        camera.updateProjectionMatrix();
+    }
 
     // Transition state
     let transStart = null, transFrom = 0, transTo = 0;
@@ -117,7 +128,9 @@
     const tmpColor = new THREE.Color();
 
     function animate(now) {
+        scrollT += (scrollTargetT - scrollT) * 0.07;  // smooth lerp
         tickTransition(now);
+        setCameraAngle(camTheta);
         updateMouseWorld();
 
         const isDark = document.documentElement.classList.contains('theme-dark');
