@@ -11,8 +11,7 @@
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 12000);
 
-    // Current orbit angle (Y-axis rotation around world origin)
-    let camTheta = 0;
+    const camTheta = 0;
 
     // Scroll-driven camera: zoom in + lower angle as page scrolls down
     const CAM_TOP  = { x: 0, y: 700, z: 400 };
@@ -52,25 +51,6 @@
         );
         camera.fov = FOV_TOP + (FOV_BOT - FOV_TOP) * t;
         camera.updateProjectionMatrix();
-    }
-
-    // Transition state
-    let transStart = null, transFrom = 0, transTo = 0;
-    const TRANS_MS = 650;
-    let pendingUrl = null;
-
-    function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
-
-    function tickTransition(now) {
-        if (transStart === null) return;
-        const t = Math.min((now - transStart) / TRANS_MS, 1);
-        camTheta = transFrom + (transTo - transFrom) * easeInOut(t);
-        setCameraAngle(camTheta);
-        if (t >= 1) {
-            transStart = null;
-            camTheta = transTo;
-            if (pendingUrl) { window.location.href = pendingUrl; pendingUrl = null; }
-        }
     }
 
     // Round dot sprite texture
@@ -143,7 +123,6 @@
 
     function animate(now) {
         scrollT += (scrollTargetT - scrollT) * 0.07;  // smooth lerp
-        tickTransition(now);
         setCameraAngle(camTheta);
         updateMouseWorld();
 
@@ -218,27 +197,6 @@
     let waveOffset = 0;
     const waveRef = sessionStorage.getItem('wave-ref');
     if (waveRef) waveOffset = Date.now() - parseInt(waveRef);
-
-    // Expose transition trigger for nav links (wired up in DOMContentLoaded)
-    window._triggerCamTransition = function (url, direction) {
-        sessionStorage.setItem('wave-ref', Date.now().toString());
-        transFrom = camTheta;
-        transTo = camTheta + direction * Math.PI / 2;
-        transStart = performance.now();
-        pendingUrl = url;
-    };
-
-    // On page load: check for incoming transition
-    const incoming = sessionStorage.getItem('cam-incoming');
-    if (incoming !== null) {
-        sessionStorage.removeItem('cam-incoming');
-        const startAngle = parseFloat(incoming);
-        camTheta = startAngle;
-        setCameraAngle(startAngle);
-        transFrom = startAngle;
-        transTo = 0;
-        transStart = performance.now();
-    }
 
     requestAnimationFrame(animate);
 })();
@@ -316,21 +274,35 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Camera rotation on nav transitions (Music ↔ About)
+    // Page transition: rotate the whole body (dots + text together) in CSS 3D.
+    // The Three.js canvas is position:fixed, which becomes relative to its nearest
+    // transformed ancestor — so body transform rotates the canvas too.
+    const TRANS_DUR = 580;
     const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+    // If arriving from a transition, snap to -90° then animate to 0°
+    if (sessionStorage.getItem('page-incoming')) {
+        sessionStorage.removeItem('page-incoming');
+        document.body.style.transition = 'none';
+        document.body.style.transform = 'rotateY(-90deg)';
+        document.body.offsetHeight; // force reflow
+        document.body.style.transition = `transform ${TRANS_DUR}ms cubic-bezier(0.4,0,0.2,1)`;
+        document.body.style.transform = 'rotateY(0deg)';
+    }
+
     document.querySelectorAll('.nav-menu a[href]').forEach(link => {
         const href = link.getAttribute('href');
         if (!href || href.startsWith('mailto') || href.startsWith('#')) return;
         const dest = href.replace(/\/$/, '') || '/';
-        if (dest === currentPath) return;  // already here
+        if (dest === currentPath) return;
 
         link.addEventListener('click', e => {
-            if (!window._triggerCamTransition) return;
             e.preventDefault();
-            // Direction: going deeper (+1) or back (-1) based on path depth
-            const dir = dest.length > currentPath.length ? 1 : -1;
-            sessionStorage.setItem('cam-incoming', String(-dir * Math.PI / 2));
-            window._triggerCamTransition(href, dir);
+            sessionStorage.setItem('wave-ref', Date.now().toString());
+            sessionStorage.setItem('page-incoming', '1');
+            document.body.style.transition = `transform ${TRANS_DUR}ms cubic-bezier(0.4,0,0.2,1)`;
+            document.body.style.transform = 'rotateY(90deg)';
+            setTimeout(() => { window.location.href = href; }, TRANS_DUR + 20);
         });
     });
 
