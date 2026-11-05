@@ -24,11 +24,6 @@
         ]
       },
       {
-        "id": "live",
-        "title": "Live Recordings",
-        "tracks": []
-      },
-      {
         "id": "credits",
         "title": "Credits",
         "tracks": [
