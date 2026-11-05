@@ -139,7 +139,7 @@ h1, h2, h3, h4 {
 /* ---------- Nav ---------- */
 
 .navbar {
-    background-color: var(--bg-color);
+    background-color: rgba(42, 58, 74, 0.92);
     padding: 1.5rem 0;
     position: sticky;
     top: 0;
@@ -161,7 +161,7 @@ h1, h2, h3, h4 {
     font-family: var(--sans);
     font-weight: 700;
     font-size: 1rem;
-    color: var(--black);
+    color: #fff;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -177,7 +177,7 @@ h1, h2, h3, h4 {
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--black);
+    color: rgba(255,255,255,0.85);
 }
 
 .nav-menu a::after {
@@ -542,8 +542,8 @@ h1, h2, h3, h4 {
 /* ---------- Footer ---------- */
 
 .footer {
-    background-color: var(--bg-color);
-    color: var(--black);
+    background-color: rgba(42, 58, 74, 0.92);
+    color: rgba(255,255,255,0.7);
     padding: 3rem 0 4rem;
     margin-top: 4rem;
     font-family: var(--sans);
@@ -575,7 +575,7 @@ h1, h2, h3, h4 {
 }
 
 .footer-links a {
-    color: var(--black);
+    color: rgba(255,255,255,0.85);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-weight: 500;
