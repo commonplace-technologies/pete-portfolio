@@ -187,11 +187,14 @@ h1, h2, h3, h4 {
     content: " →";
     margin-left: 0.2em;
     opacity: 0.6;
+    text-decoration: none;
+    display: inline-block; /* breaks it out of the underline flow */
 }
 
 .nav-menu a[aria-current="page"] {
     text-decoration: underline;
     text-underline-offset: 4px;
+    text-decoration-skip-ink: auto;
 }
 
 .nav-toggle {

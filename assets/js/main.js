@@ -284,6 +284,17 @@
                     history.pushState({}, doc.title, url);
                 }
 
+                // Update aria-current on nav links to reflect the new page
+                const newPath = new URL(url, location.origin).pathname;
+                document.querySelectorAll('.nav-menu a[href]').forEach(link => {
+                    const linkPath = new URL(link.getAttribute('href'), location.origin).pathname;
+                    if (linkPath === newPath) {
+                        link.setAttribute('aria-current', 'page');
+                    } else {
+                        link.removeAttribute('aria-current');
+                    }
+                });
+
                 // Reset scroll position for the new page
                 scrollTargetT = 0;
                 scrollT = 0;
